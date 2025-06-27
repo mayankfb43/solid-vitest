@@ -2,11 +2,7 @@ import { render, fireEvent } from "@solidjs/testing-library";
 import axios from "axios";
 
 import { TodoList } from "./todo-list";
-vi.mock("axios", () => ({
-  default: {
-    get: vi.fn(),
-  },
-}));
+import { vi } from "vitest";
 
 describe("<TodoList />", () => {
   test("it will render an text input and a button", () => {
@@ -77,7 +73,7 @@ describe("<TodoList />", () => {
         },
       ],
     };
-
+    axios.get = vi.fn();
     axios.get.mockResolvedValue(mockData);
 
     const { findAllByRole } = render(() => <TodoList />);
