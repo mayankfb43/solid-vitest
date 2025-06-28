@@ -1,10 +1,15 @@
-import { For, onMount } from "solid-js";
+import { createEffect, createResource, createSignal, For } from "solid-js";
 import { createStore } from "solid-js/store";
-import axios from "axios";
+import { person } from "./obj";
+const fetchTodos = async (num) => {
+  const response = await person.axiosInstance.get(`/todos?_limit=${num}`);
+  return response.data;
+};
 
 export const TodoList = () => {
   let input;
   const [todos, setTodos] = createStore([]);
+  const [count, setCount] = createSignal(1);
 
   const addTodo = (text) => {
     setTodos(todos.length, {
@@ -21,18 +26,19 @@ export const TodoList = () => {
     }
   };
 
+  const [data] = createResource(count, fetchTodos);
+
   // Fetch initial todos using axios
-  onMount(async () => {
+  createEffect(async () => {
     try {
-      const response = await axios.get(
-        "https://jsonplaceholder.typicode.com/todos?_limit=5"
-      );
-      const normalized = response.data.map((todo) => ({
-        id: todo.id,
-        text: todo.title,
-        completed: todo.completed,
-      }));
-      setTodos(normalized);
+      if (data()) {
+        const normalized = data().map((todo) => ({
+          id: todo.id,
+          text: todo.title,
+          completed: todo.completed,
+        }));
+        setTodos(normalized);
+      }
     } catch (error) {
       console.error("Error fetching todos:", error);
     }
@@ -51,6 +57,7 @@ export const TodoList = () => {
         >
           Add Todo
         </button>
+        <button onclick={() => setCount((c) => c + 10)}>Fetch more</button>
       </div>
       <div>
         <For each={todos}>

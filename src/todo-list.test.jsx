@@ -1,8 +1,19 @@
 import { render, fireEvent } from "@solidjs/testing-library";
 import axios from "axios";
-
+import { describe, expect, test } from "vitest";
 import { TodoList } from "./todo-list";
 import { vi } from "vitest";
+
+import { person } from "./obj";
+import { multiply, sum } from "./add";
+
+vi.mock("./add", async () => {
+  const actual = await vi.importActual("./add");
+  return {
+    ...actual,
+    sum: vi.fn().mockResolvedValue(100), // only mock `sum`
+  };
+});
 
 describe("<TodoList />", () => {
   test("it will render an text input and a button", () => {
@@ -38,7 +49,7 @@ describe("<TodoList />", () => {
   });
 
   test("api testing - renders 5 todo items", async () => {
-    const mockData = {
+    vi.spyOn(person.axiosInstance, "get").mockResolvedValue({
       data: [
         {
           userId: 1,
@@ -72,15 +83,28 @@ describe("<TodoList />", () => {
           completed: false,
         },
       ],
-    };
-    axios.get = vi.fn();
-    axios.get.mockResolvedValue(mockData);
+    });
 
     const { findAllByRole } = render(() => <TodoList />);
-
-    // Assuming each item renders as <li> or similar role
     const items = await findAllByRole("listitem");
-
+    expect(person.axiosInstance.get).toHaveBeenCalled();
+    expect(person.axiosInstance.get).toHaveBeenCalledWith("/todos?_limit=1");
     expect(items).toHaveLength(5);
+  });
+
+  test("mock module", async () => {
+    vi.spyOn(person, "getName").mockResolvedValue("help");
+    let result = await person.getName("test");
+    expect(result).toBe("help");
+    expect(person.getName).toHaveBeenCalled();
+    expect(person.getName).toHaveBeenCalledWith("test");
+  });
+
+  test("mock add function", async () => {
+    let result = await sum(1, 2);
+    expect(result).toBe(100);
+
+    let multiplyResult = multiply(2, 4);
+    expect(multiplyResult).toBe(8);
   });
 });
